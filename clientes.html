@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Projetos por Cliente | SOMOS • CREATORS</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>•</text></svg>">
+    <!-- Fontes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Scripts e CSS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.0/dist/vis-timeline-graph2d.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.0/dist/vis-timeline-graph2d.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #FFD700;
+            --accent-color: #FFC107;
+            --text-color: #333333;
+            --bg-color: #FFFFFF;
+            --card-bg: #FFFFFF;
+            --priority-high: #FF4136;
+            --priority-medium: #FFDC00;
+            --priority-low: #2ECC40;
+            --hover-color: #f0f0f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .app-header {
+            background-color: #222;
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+        }
+
+        .nav-link {
+            color: #CCC;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-link.active {
+            background-color: var(--primary-color);
+            color: #222;
+            font-weight: 500;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 1rem 1.25rem;
+        }
+
+        .filter-card {
+            background-color: var(--card-bg);
+        }
+
+        .filtro-group {
+            min-width: 200px;
+        }
+
+        .btn {
+            border-radius: 6px;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-accent {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #222;
+        }
+
+        .btn-accent:hover {
+            background-color: #e6ae00;
+            border-color: #e6ae00;
+            color: #222;
+        }
+
+        .btn-control {
+            background-color: #f0f0f0;
+            border-color: #e0e0e0;
+            color: #666;
+        }
+
+        .btn-control:hover {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .timeline-container {
+            height: 600px;
+            background-color: var(--card-bg);
+        }
+
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .text-accent {
+            color: var(--accent-color) !important;
+        }
+
+        .app-footer {
+            background-color: #222;
+            color: white;
+            padding: 1rem 0;
+            margin-top: auto;
+        }
+
+        .priority-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .priority-high {
+            background-color: var(--priority-high);
+        }
+
+        .priority-medium {
+            background-color: var(--priority-medium);
+        }
+
+        .priority-low {
+            background-color: var(--priority-low);
+        }
+
+        /* Customização da vis.js Timeline */
+        .vis-item {
+            border-radius: 4px;
+            border-width: 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+        }
+
+        .vis-item.task-priority-high {
+            background-color: var(--priority-high);
+            border-color: var(--priority-high);
+            color: white;
+            box-shadow: 0 2px 4px rgba(255, 65, 54, 0.2);
+        }
+
+        .vis-item.task-priority-medium {
+            background-color: var(--priority-medium);
+            border-color: var(--priority-medium);
+            color: #333;
+            box-shadow: 0 2px 4px rgba(255, 220, 0, 0.2);
+        }
+
+        .vis-item.task-priority-low {
+            background-color: var(--priority-low);
+            border-color: var(--priority-low);
+            color: white;
+            box-shadow: 0 2px 4px rgba(46, 204, 64, 0.2);
+        }
+
+        .vis-item .vis-item-content {
+            padding: 4px 8px;
+        }
+
+        .vis-item.vis-selected {
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            box-shadow: 0 0 0 3px rgba(255, 209, 0, 0.5);
+        }
+
+        .vis-time-axis .vis-text {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .vis-group-label {
+            font-weight: 600;
+        }
+        
+        .vis-tooltip {
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            background-color: white;
+            border: none;
+            padding: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Classes para status de projeto */
+        .projeto-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            text-align: center;
+            min-width: 100px;
+        }
+        
+        .status-concluido {
+            background-color: var(--priority-low);
+            color: white;
+        }
+        
+        .status-andamento {
+            background-color: var(--priority-medium);
+            color: #333;
+        }
+        
+        .status-atrasado {
+            background-color: var(--priority-high);
+            color: white;
+        }
+        
+        /* Cores para clientes */
+        .cliente-sicredi { color: #dc3545 !important; }
+        .cliente-samsung { color: #0d6efd !important; }
+        .cliente-vivo { color: #198754 !important; }
+        .cliente-rd { color: #ffc107 !important; }
+        .cliente-americanas { color: #0dcaf0 !important; }
+        .cliente-oboticario { color: #212529 !important; }
+        .cliente-cogna { color: #6c757d !important; }
+        
+        /* Classes para legenda */
+        .legend-container {
+            padding: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            background-color: var(--card-bg);
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+        
+        /* Tabela de projetos */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .table {
+            font-size: 0.9rem;
+        }
+        
+        .table > thead {
+            background-color: #f8f9fa;
+        }
+        
+        .table > tbody > tr:hover {
+            background-color: rgba(255, 220, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="container-fluid d-flex justify-content-between align-items-center">
+                <div class="logo-container">
+                    <div class="logo-circle"></div>
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="index.html" class="nav-link">
+                        <i class="fas fa-users me-1"></i> Por Equipe
+                    </a>
+                    <a href="clientes.html" class="nav-link active">
+                        <i class="fas fa-building me-1"></i> Por Cliente
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <div class="container-fluid my-4">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card filter-card">
+                        <div class="card-body d-flex flex-wrap gap-3 align-items-end justify-content-between">
+                            <div class="filtro-group">
+                                <label for="cliente-select" class="form-label">Cliente</label>
+                                <select id="cliente-select" class="form-select">
+                                    <option value="todos">Todos</option>
+                                </select>
+                            </div>
+                            <div class="filtro-group">
+                                <label for="grupo-principal-select" class="form-label">Grupo</label>
+                                <select id="grupo-principal-select" class="form-select">
+                                    <option value="todos">Todos</option>
+                                    <option value="BI">BI</option>
+                                    <option value="Criação">Criação</option>
+                                    <option value="Estratégia">Estratégia</option>
+                                    <option value="Mídia">Mídia</option>
+                                    <option value="Operações">Operações</option>
+                                    <option value="Produção">Produção</option>
+                                </select>
+                            </div>
+                            <div class="filtro-group">
+                                <label for="periodo-select" class="form-label">Período</label>
+                                <select id="periodo-select" class="form-select">
+                                    <option value="30">30 dias</option>
+                                    <option value="90">90 dias</option>
+                                    <option value="180">6 meses</option>
+                                    <option value="365" selected>1 ano</option>
+                                </select>
+                            </div>
+                            <div class="d-flex">
+                                <button id="exportar-dados" class="btn btn-accent">
+                                    <i class="fas fa-download me-2"></i>Exportar CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="card cronograma-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                <span>Cronograma de Projetos por Cliente</span>
+                            </div>
+                            <div class="timeline-controls">
+                                <button class="btn btn-sm btn-control me-1" id="btn-anterior" title="Semana anterior">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button class="btn btn-sm btn-accent me-1" id="btn-hoje" title="Hoje">Hoje</button>
+                                <button class="btn btn-sm btn-control me-1" id="btn-proximo" title="Próxima semana">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <button class="btn btn-sm btn-control me-1" id="btn-zoom-out" title="Diminuir zoom">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-control me-1" id="btn-zoom-in" title="Aumentar zoom">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-control" id="btn-fullscreen" title="Tela cheia">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="timeline" class="timeline-container">
+                                <div class="loading-container">
+                                    <div class="loading-spinner"></div>
+                                    <p class="mt-3">Carregando dados...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Legenda -->
+                        <div class="legend-container">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: var(--priority-high);"></div>
+                                <span>Prioridade Alta</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: var(--priority-medium);"></div>
+                                <span>Prioridade Média</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: var(--priority-low);"></div>
+                                <span>Prioridade Baixa</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+           
+        <footer class="app-footer">
+            <div class="container-fluid text-center">
+                <p class="mb-0">SOMOS <span class="text-accent">•</span> CREATORS &copy; <span id="ano-atual">2025</span></p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="clients.js"></script>
+</body>
+</html>
