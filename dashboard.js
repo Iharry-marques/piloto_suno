@@ -1,6 +1,6 @@
 /**
  * Dashboard de Tarefas - SUNO
- * dashboard.js - Script principal para visualização por equipe
+ * dashboard.js - Script principal aprimorado para visualização por equipe
  */
 
 const CONFIG = {
@@ -68,7 +68,7 @@ function setupEventListeners() {
   });
   document.getElementById("subgrupo-select")?.addEventListener("change", atualizarFiltros);
   
-  // Novos event listeners para filtros de tipo de tarefa
+  // Event listeners para filtros de tipo de tarefa
   document.getElementById("mostrar-tarefas")?.addEventListener("change", atualizarFiltros);
   document.getElementById("mostrar-subtarefas")?.addEventListener("change", atualizarFiltros);
 
@@ -353,7 +353,7 @@ function atualizarFiltros() {
     });
   }
 
-  // Filtrar por tipo de tarefa (novo)
+  // Filtrar por tipo de tarefa
   if (!mostrarTarefas || !mostrarSubtarefas) {
     appState.filteredData = appState.filteredData.filter(item => {
       const isSubtask = item.tipo === "Subtarefa";
@@ -395,12 +395,26 @@ function criarTimeline(dados) {
       const taskClass = CONFIG.priorityClasses[item.Priority] || "";
       const shortDurationClass = isShortDuration ? "short-duration" : "";
 
+      // Conteúdo normal para exibição padrão
+      const normalContent = `<div class="timeline-item-content ${isSubtask ? 'subtask' : ''}" title="${item.name}">
+                              <span class="priority-dot ${CONFIG.priorityClasses[item.Priority]}"></span>
+                              ${titlePrefix}${item.name.substring(0, 25)}${item.name.length > 25 ? "..." : ""}
+                            </div>`;
+                            
+      // Conteúdo completo para quando estiver expandido
+      const fullContent = `<div class="full-content">
+                            <strong>${item.name}</strong>
+                            <p>Cliente: ${item.client || "N/A"}</p>
+                            <p>Responsável: ${item.responsible || "N/A"}</p>
+                            <p>Status: ${item.PipelineStepTitle || "N/A"}</p>
+                            <p>Tipo: ${item.tipo || "Tarefa"}</p>
+                          </div>`;
+
       return {
         id: idx,
-        content: `<div class="timeline-item-content ${isSubtask ? 'subtask' : ''}" title="${item.name}">
-                    <span class="priority-dot ${CONFIG.priorityClasses[item.Priority]}"></span>
-                    ${titlePrefix}${item.name.substring(0, 25)}${item.name.length > 25 ? "..." : ""}
-                  </div>`,
+        content: normalContent,
+        _conteudoOriginal: normalContent,
+        _conteudoCompleto: fullContent,
         start: startDate.toDate(),
         end: endDate.toDate(),
         group: item.responsible,
@@ -441,26 +455,78 @@ function criarTimeline(dados) {
     appState.timeline.fit();
     
     // Adicionar evento de clique para expandir/colapsar
-    container.addEventListener('click', (event) => {
-      const element = event.target.closest('.vis-item');
-      if (element) {
-        // Toggle da classe expanded
-        if (element.classList.contains('expanded')) {
-          element.classList.remove('expanded');
-        } else {
-          // Remover a classe expanded de todos os outros elementos
-          document.querySelectorAll('.vis-item.expanded').forEach(el => {
-            if (el !== element) el.classList.remove('expanded');
-          });
-          element.classList.add('expanded');
-        }
-      }
-    });
+    setupTimelineClickHandlers();
     
   } catch (error) {
     console.error("Erro ao criar timeline:", error);
     container.innerHTML = `<div class="alert alert-danger">Erro: ${error.message}</div>`;
   }
+}
+
+// Função unificada para gerenciar cliques na timeline
+function setupTimelineClickHandlers() {
+  const container = document.getElementById("timeline");
+  if (!container) return;
+  
+  container.addEventListener('click', (event) => {
+    const element = event.target.closest('.vis-item');
+    if (!element) return;
+    
+    // Toggle expanded class
+    if (element.classList.contains('expanded')) {
+      element.classList.remove('expanded');
+      
+      // Restaurar conteúdo original se necessário
+      const itemId = element.getAttribute('data-id');
+      if (itemId && appState.timeline && appState.timeline.itemsData) {
+        const items = appState.timeline.itemsData;
+        const item = items.get(itemId);
+        
+        if (item && item._conteudoOriginal) {
+          items.update({
+            id: itemId,
+            content: item._conteudoOriginal
+          });
+        }
+      }
+    } else {
+      // Remove expanded class from all other elements first
+      document.querySelectorAll('.vis-item.expanded').forEach(el => {
+        if (el !== element) {
+          el.classList.remove('expanded');
+          
+          // Restaurar conteúdo original dos outros itens
+          const otherId = el.getAttribute('data-id');
+          if (otherId && appState.timeline && appState.timeline.itemsData) {
+            const items = appState.timeline.itemsData;
+            const otherItem = items.get(otherId);
+            if (otherItem && otherItem._conteudoOriginal) {
+              items.update({
+                id: otherId,
+                content: otherItem._conteudoOriginal
+              });
+            }
+          }
+        }
+      });
+      
+      element.classList.add('expanded');
+      
+      // Usar conteúdo completo para o item expandido
+      const itemId = element.getAttribute('data-id');
+      if (itemId && appState.timeline && appState.timeline.itemsData) {
+        const items = appState.timeline.itemsData;
+        const item = items.get(itemId);
+        
+        if (item && item._conteudoCompleto) {
+          items.update({
+            id: itemId,
+            content: item._conteudoCompleto
+          });
+        }
+      }
+    }
+  });
 }
 
 // Navegar para frente/atrás na timeline
@@ -512,22 +578,33 @@ function exportarCSV() {
   const headers = [
     "Cliente", "Projeto", "Tarefa", "Tipo",
     "Data Início", "Data Fim", "Responsável",
-    "Grupo", "Subgrupo", "Membro", "Prioridade"
+    "Grupo", "Subgrupo", "Prioridade", "Status"
   ];
 
-  const linhas = appState.filteredData.map(item => [
-    item.client || "N/A",
-    item.project || "N/A",
-    item.name || "Sem título",
-    item.tipo || "Tarefa",
-    item.start ? moment(item.start).format("DD/MM/YYYY") : "-",
-    item.end ? moment(item.end).format("DD/MM/YYYY") : "-",
-    item.responsible || "N/A",
-    item.TaskOwnerGroup || "N/A",
-    item.TaskOwnerSubgroup || "N/A",
-    item.TaskOwnerMember || "N/A",
-    item.Priority === "high" ? "Alta" : item.Priority === "medium" ? "Média" : "Baixa"
-  ]);
+  const linhas = appState.filteredData.map(item => {
+    // Extrair subgrupo do caminho completo
+    let subgrupo = "";
+    if (item.TaskOwnerFullPath) {
+      const partes = item.TaskOwnerFullPath.split("/").map(p => p.trim());
+      if (partes.length > 1) {
+        subgrupo = partes.slice(1).join(" / ");
+      }
+    }
+    
+    return [
+      item.client || "N/A",
+      item.project || "N/A",
+      item.name || "Sem título",
+      item.tipo || "Tarefa",
+      item.start ? moment(item.start).format("DD/MM/YYYY") : "-",
+      item.end ? moment(item.end).format("DD/MM/YYYY") : "-",
+      item.responsible || "N/A",
+      item.TaskOwnerGroup || "N/A",
+      subgrupo || "N/A",
+      item.Priority === "high" ? "Alta" : item.Priority === "medium" ? "Média" : "Baixa",
+      item.PipelineStepTitle || "N/A"
+    ];
+  });
 
   const csvContent = [
     headers.join(","),
