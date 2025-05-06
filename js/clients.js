@@ -462,7 +462,6 @@ function criarTimeline(projetos) {
               <p><strong>Time:</strong> ${equipeFormatada}</p>
               <p><strong>Período:</strong> ${startDate.format("DD/MM/YYYY")} - ${endDate.format("DD/MM/YYYY")}</p>
               <p><strong>Status:</strong> <span class="${statusClass}">${projeto.status}</span></p>
-              <p><strong>Progresso:</strong> ${projeto.progress}%</p>
             </div>`,
           start: startDate.toDate(),
           end: endDate.toDate(),
