@@ -627,27 +627,28 @@ select option {
 .mini-dot {
   width: 8px !important;
   height: 8px !important;
-  margin-right: 4px;
+  margin-right: 4px !important;
 }
 
 /* Ajuste para subtarefas curtas (mantém o traço/estilo tracejado) */
 .mini-task.subtask {
   border: 1px dashed #333 !important;
-  opacity: 0.9;
-  font-style: italic;
+  opacity: 0.9 !important;
+  font-style: italic !important;
 }
 
 /* Garante que mesmo tarefas curtas tenham texto visível */
 .vis-item.short-duration .vis-item-content {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   min-width: 50px !important;
+  display: inline-flex !important;
 }
 
 /* Ajuste para hover em tarefas curtas com texto */
 .mini-task:hover {
-  background-color: #f5f5f5;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  z-index: 10;
+  background-color: #f5f5f5 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  z-index: 10 !important;
 }
