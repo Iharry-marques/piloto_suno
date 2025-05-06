@@ -30,7 +30,7 @@ let appState = {
 // Mapeamento de nomes de equipes para abreviações
 const equipesAbreviacao = {
   "Criação": "{CRIA}",
-  "Mídia": "{MIDIA}",
+  "Mídia": "{MID}",
   "Produção": "{PROD}",
   "Operações": "{OPEC}",
   "BI": "{BI}",
