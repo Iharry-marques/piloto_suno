@@ -28,6 +28,28 @@ let appState = {
     jsonUrl: localStorage.getItem("jsonUrl") || "dados.json",
   },
 };
+/**
+ * Atribui uma classe de prioridade aleatória para visualização na timeline
+ * Com tendência para mais verdes e amarelas, algumas vermelhas e cinzas
+ * @param {number} id - ID do item para garantir consistência na cor
+ * @returns {string} Classe CSS de prioridade
+ */
+
+function obterCorAleatoria(id) {
+  // Usar o ID como seed para garantir que cada tarefa tenha sempre a mesma cor
+  const seed = id % 100;
+  
+  // Distribuição: 40% verde, 35% amarelo, 15% vermelho, 10% cinza
+  if (seed < 40) {
+    return "task-priority-low"; // Verde
+  } else if (seed < 75) {
+    return "task-priority-medium"; // Amarelo
+  } else if (seed < 90) {
+    return "task-priority-high"; // Vermelho
+  } else {
+    return "task-priority-gray"; // Cinza - classe que precisamos adicionar ao CSS
+  }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   getEl("ano-atual").textContent = new Date().getFullYear();
@@ -344,7 +366,7 @@ function criarTimeline(dados) {
         
         const isSubtask = item.tipo === "Subtarefa";
         const titlePrefix = isSubtask ? "↳ " : "";
-        const taskClass = CONFIG.priorityClasses[item.Priority] || "";
+        const taskClass = obterCorAleatoria(parseInt(item.id) || idx);
 
         // Conteúdo com base na duração da tarefa
         let content;

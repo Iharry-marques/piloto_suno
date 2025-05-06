@@ -15,6 +15,22 @@
   --priority-low: #2ecc40;
   --hover-color: #f0f0f0;
   --subtask-color: #efefef;
+  --priority-gray: #a0a0a0;  
+}
+
+.priority-gray, .priority-dot.gray { 
+  background-color: var(--priority-gray) !important; 
+}
+
+.vis-item.task-priority-gray {
+  background-color: var(--priority-gray) !important;
+  border-color: var(--priority-gray) !important;
+  color: white !important;
+  box-shadow: 0 2px 4px rgba(160, 160, 160, 0.2);
+}
+
+.vis-item.subtask.task-priority-gray {
+  background-color: rgba(160, 160, 160, 0.85) !important;
 }
 
 /* ========== ESTILOS BÁSICOS ========== */
