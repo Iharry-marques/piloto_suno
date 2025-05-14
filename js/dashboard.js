@@ -15,7 +15,7 @@ import {
   preprocessarDados,
   exportarParaCSV,
   CONFIG,
-  getTimelineOptions
+  getTimelineOptions,
 } from "./utils.js";
 
 let appState = {
@@ -28,6 +28,28 @@ let appState = {
     jsonUrl: localStorage.getItem("jsonUrl") || "dados.json",
   },
 };
+/**
+ * Atribui uma classe de prioridade aleatória para visualização na timeline
+ * Com tendência para mais verdes e amarelas, algumas vermelhas e cinzas
+ * @param {number} id - ID do item para garantir consistência na cor
+ * @returns {string} Classe CSS de prioridade
+ */
+
+function obterCorAleatoria(id) {
+  // Usar o ID como seed para garantir que cada tarefa tenha sempre a mesma cor
+  const seed = id % 100;
+  
+  // Distribuição: 40% verde, 35% amarelo, 15% vermelho, 10% cinza
+  if (seed < 40) {
+    return "task-priority-low"; // Verde
+  } else if (seed < 75) {
+    return "task-priority-medium"; // Amarelo
+  } else if (seed < 90) {
+    return "task-priority-high"; // Vermelho
+  } else {
+    return "task-priority-gray"; // Cinza - classe que precisamos adicionar ao CSS
+  }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   getEl("ano-atual").textContent = new Date().getFullYear();
@@ -36,14 +58,27 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function setupEventListeners() {
-  getEl("btn-anterior")?.addEventListener("click", () => moverTimeline(appState.timeline, -7));
-  getEl("btn-hoje")?.addEventListener("click", () => irParaHoje(appState.timeline));
-  getEl("btn-proximo")?.addEventListener("click", () => moverTimeline(appState.timeline, 7));
-  getEl("btn-zoom-out")?.addEventListener("click", () => ajustarZoom(appState.timeline, 0.7));
-  getEl("btn-zoom-in")?.addEventListener("click", () => ajustarZoom(appState.timeline, 1.3));
+  getEl("btn-anterior")?.addEventListener("click", () =>
+    moverTimeline(appState.timeline, -7)
+  );
+  getEl("btn-hoje")?.addEventListener("click", () =>
+    irParaHoje(appState.timeline)
+  );
+  getEl("btn-proximo")?.addEventListener("click", () =>
+    moverTimeline(appState.timeline, 7)
+  );
+  getEl("btn-zoom-out")?.addEventListener("click", () =>
+    ajustarZoom(appState.timeline, 0.7)
+  );
+  getEl("btn-zoom-in")?.addEventListener("click", () =>
+    ajustarZoom(appState.timeline, 1.3)
+  );
   getEl("exportar-dados")?.addEventListener("click", exportarCSV);
 
-  getEl("cliente-principal-select")?.addEventListener("change", atualizarFiltros);
+  getEl("cliente-principal-select")?.addEventListener(
+    "change",
+    atualizarFiltros
+  );
   getEl("periodo-select")?.addEventListener("change", atualizarFiltros);
   getEl("grupo-select")?.addEventListener("change", () => {
     atualizarSubgrupos();
@@ -66,7 +101,7 @@ function setupEventListeners() {
 async function carregarDados() {
   try {
     mostrarLoading(getEl("timeline"), true);
-    
+
     appState.allData = await carregarDadosDeJSON(
       appState.settings.jsonUrl,
       preprocessarDados
@@ -92,7 +127,7 @@ function preencherFiltros() {
   if (grupoPrincipalSelect) {
     grupoPrincipalSelect.innerHTML = '<option value="todos">Todos</option>';
   }
-  
+
   if (clienteSelect) {
     clienteSelect.innerHTML = '<option value="todos">Todos</option>';
   }
@@ -325,20 +360,26 @@ function criarTimeline(dados) {
           : startDate.clone().add(3, "days");
 
         // Verificar se é uma tarefa de curta duração (menos de 3 dias)
+        // Verificar se é uma tarefa de curta duração (menos de 3 dias)
         const duration = endDate.diff(startDate, "days");
         const isShortDuration = duration <= 2;
-
+        
         const isSubtask = item.tipo === "Subtarefa";
         const titlePrefix = isSubtask ? "↳ " : "";
-        const taskClass = CONFIG.priorityClasses[item.Priority] || "";
+        const taskClass = obterCorAleatoria(parseInt(item.id) || idx);
 
         // Conteúdo com base na duração da tarefa
         let content;
         if (isShortDuration) {
-          // Tarefa curta - mostrar como bolinha
-          content = `<div class="timeline-dot ${taskClass} ${isSubtask ? "subtask" : ""}" data-type="curta" title="${item.name}"></div>`;
+          // Tarefa curta - agora mostra texto com estilo adaptado
+          content = `<div class="mini-task ${taskClass} ${isSubtask ? "subtask" : ""}" data-type="curta" title="${item.name}">
+                        <span class="priority-dot ${taskClass} mini-dot"></span>
+                        ${titlePrefix}${item.name.substring(0, 15)}${
+            item.name.length > 15 ? "..." : ""
+          }
+                      </div>`;
         } else {
-          // Tarefa longa - mostrar como barra
+          // Tarefa longa - formato normal
           content = `<div class="timeline-item-content ${isSubtask ? "subtask" : ""}" data-type="longa" title="${item.name}">
                         <span class="priority-dot ${taskClass}"></span>
                         ${titlePrefix}${item.name.substring(0, 25)}${
@@ -365,9 +406,11 @@ function criarTimeline(dados) {
             <p><strong>Grupo:</strong> ${item.TaskOwnerFullPath || "N/A"}</p>
             <p><strong>Tipo:</strong> ${item.tipo || "Tarefa"}</p>
           </div>`,
-          className: `${taskClass} ${isSubtask ? "subtask" : ""} ${isShortDuration ? "curta" : "longa"}`,
-          isShortDuration: isShortDuration,  // Flag para identificar o tipo de tarefa
-          itemData: item  // Armazenar o item original para uso no modal
+          className: `${taskClass} ${isSubtask ? "subtask" : ""} ${
+            isShortDuration ? "curta" : "longa"
+          }`,
+          isShortDuration: isShortDuration, // Flag para identificar o tipo de tarefa
+          itemData: item, // Armazenar o item original para uso no modal
         };
       })
     );
@@ -386,14 +429,14 @@ function criarTimeline(dados) {
     appState.timeline.fit();
 
     // EVENTO NATIVO de clique da timeline para tarefas curtas e longas
-    appState.timeline.on("click", function(properties) {
+    appState.timeline.on("click", function (properties) {
       if (!properties.item) return;
-      
+
       const id = properties.item;
       const item = items.get(id);
-      
+
       if (!item) return;
-      
+
       // Se for uma tarefa curta, mostrar o modal
       if (item.isShortDuration) {
         const tarefaData = item.itemData;
@@ -401,18 +444,26 @@ function criarTimeline(dados) {
           <div style="padding: 1rem">
             <h4>${tarefaData.name}</h4>
             <p><strong>Cliente:</strong> ${tarefaData.client || "N/A"}</p>
-            <p><strong>Responsável:</strong> ${tarefaData.responsible || "N/A"}</p>
-            <p><strong>Status:</strong> ${tarefaData.PipelineStepTitle || "N/A"}</p>
+            <p><strong>Responsável:</strong> ${
+              tarefaData.responsible || "N/A"
+            }</p>
+            <p><strong>Status:</strong> ${
+              tarefaData.PipelineStepTitle || "N/A"
+            }</p>
             <p><strong>Prioridade:</strong> ${tarefaData.Priority || "N/A"}</p>
             <p><strong>Tipo:</strong> ${tarefaData.tipo || "Tarefa"}</p>
-            <p><strong>Período:</strong> ${moment(tarefaData.start).format("DD/MM/YYYY")} - ${moment(tarefaData.end).format("DD/MM/YYYY")}</p>
-            <p><strong>Grupo:</strong> ${tarefaData.TaskOwnerFullPath || "N/A"}</p>
+            <p><strong>Período:</strong> ${moment(tarefaData.start).format(
+              "DD/MM/YYYY"
+            )} - ${moment(tarefaData.end).format("DD/MM/YYYY")}</p>
+            <p><strong>Grupo:</strong> ${
+              tarefaData.TaskOwnerFullPath || "N/A"
+            }</p>
           </div>`;
 
-        const modal = document.createElement('div');
-        modal.className = 'modal fade show';
-        modal.style.display = 'block';
-        modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        const modal = document.createElement("div");
+        modal.className = "modal fade show";
+        modal.style.display = "block";
+        modal.style.backgroundColor = "rgba(0,0,0,0.5)";
         modal.innerHTML = `
           <div class="modal-dialog">
             <div class="modal-content">
@@ -431,18 +482,18 @@ function criarTimeline(dados) {
         // Se for uma tarefa longa, trocar a classe 'expanded'
         const element = document.querySelector(`.vis-item[data-id="${id}"]`);
         if (!element) return;
-        
-        if (element.classList.contains('expanded')) {
-          element.classList.remove('expanded');
+
+        if (element.classList.contains("expanded")) {
+          element.classList.remove("expanded");
         } else {
           // Remove expanded class from all other elements first
-          document.querySelectorAll('.vis-item.expanded').forEach(el => {
+          document.querySelectorAll(".vis-item.expanded").forEach((el) => {
             if (el !== element) {
-              el.classList.remove('expanded');
+              el.classList.remove("expanded");
             }
           });
-          
-          element.classList.add('expanded');
+
+          element.classList.add("expanded");
         }
       }
     });

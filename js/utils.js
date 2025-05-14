@@ -275,6 +275,7 @@ export const CONFIG = {
     high: "task-priority-high",
     medium: "task-priority-medium",
     low: "task-priority-low",
+    gray: "task-priority-gray"  // Nova entrada para cor cinza
   },
   clientColors: {
     SICREDI: "cliente-sicredi",

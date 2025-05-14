@@ -31,6 +31,21 @@ let appState = {
   },
 };
 
+// Mapeamento de nomes de equipes para abreviações
+const equipesAbreviacao = {
+  "Criação": "{CRIA}",
+  "Mídia": "{MID}",
+  "Produção": "{PROD}",
+  "Operações": "{OPEC}",
+  "BI": "{BI}",
+  "Estratégia": "{ESTR}"
+};
+
+// Função para obter abreviação da equipe
+function obterAbreviacaoEquipe(nomeEquipe) {
+  return equipesAbreviacao[nomeEquipe] || `{${nomeEquipe.substring(0, 4).toUpperCase()}}`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM carregado, iniciando dashboard de clientes");
 
@@ -315,12 +330,20 @@ function criarTimeline(projetos) {
         else if (projeto.status === "Atrasado") statusClass = "status-atrasado";
 
         const priorityClass = CONFIG.priorityClasses[projeto.priority] || "";
+<<<<<<< HEAD
         const equipe = projeto.groups.join(" / ") || "Sem equipe";
         const responsavel = projeto.responsibles.join(", ") || "Sem responsável";
 
+=======
+        
+        // Obter abreviações para as equipes e o título do projeto
+        const equipeFormatada = projeto.groups.map(grupo => obterAbreviacaoEquipe(grupo)).join(" / ") || "Sem equipe";
+        const tituloProjeto = projeto.name || "Sem título";
+        
+>>>>>>> d74472f5e7284a40b8cb7e76f4f6c208dfa40fb4
         const content = `<div class="timeline-item-content ${priorityClass} ${statusClass}" title="${projeto.name}">
                            <span class="priority-dot ${priorityClass}"></span>
-                           <strong>${equipe}</strong> - ${responsavel}
+                           <strong>${equipeFormatada}</strong> - ${tituloProjeto}
                          </div>`;
 
         return {
@@ -330,11 +353,14 @@ function criarTimeline(projetos) {
             <div class="timeline-tooltip">
               <h5>${projeto.name}</h5>
               <p><strong>Cliente:</strong> ${projeto.client || "N/A"}</p>
+<<<<<<< HEAD
               <p><strong>Time:</strong> ${equipe}</p>
               <p><strong>Responsável:</strong> ${responsavel}</p>
+=======
+              <p><strong>Time:</strong> ${equipeFormatada}</p>
+>>>>>>> d74472f5e7284a40b8cb7e76f4f6c208dfa40fb4
               <p><strong>Período:</strong> ${startDate.format("DD/MM/YYYY")} - ${endDate.format("DD/MM/YYYY")}</p>
               <p><strong>Status:</strong> <span class="${statusClass}">${projeto.status}</span></p>
-              <p><strong>Progresso:</strong> ${projeto.progress}%</p>
             </div>`,
           start: startDate.toDate(),
           end: endDate.toDate(),
@@ -364,6 +390,7 @@ function criarTimeline(projetos) {
 
     appState.timeline.on("select", function(properties) {
       if (!properties.items.length) return;
+<<<<<<< HEAD
       const itemId = properties.items[0];
       const item = items.get(itemId);
       if (!item || !item.projetoData) return;
@@ -375,6 +402,23 @@ function criarTimeline(projetos) {
           <p><strong>Cliente:</strong> ${p.client}</p>
           <p><strong>Equipe responsável:</strong> ${p.groups.join(" / ") || "N/A"}</p>
           <p><strong>Responsável(eis):</strong> ${p.responsibles.join(", ") || "N/A"}</p>
+=======
+      
+      const id = properties.items[0];
+      const item = items.get(id);
+      
+      if (!item || !item.projeto) return;
+      
+      const p = item.projeto;
+      const equipeFormatada = p.groups.map(grupo => obterAbreviacaoEquipe(grupo)).join(" / ");
+      
+      const content = `
+        <div style="padding: 1rem">
+          <h4>${p.name}</h4>
+          <p><strong>Cliente:</strong> ${p.client}</p>
+          <p><strong>Equipe responsável:</strong> ${equipeFormatada}</p>
+          <p><strong>Responsável:</strong> ${p.responsibles.join(", ")}</p>
+>>>>>>> d74472f5e7284a40b8cb7e76f4f6c208dfa40fb4
           <p><strong>Status:</strong> ${p.status}</p>
           <p><strong>Prioridade:</strong> ${p.priority}</p>
           <p><strong>Progresso:</strong> ${p.progress}%</p>
